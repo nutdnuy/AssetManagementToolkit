@@ -1,0 +1,16 @@
+.DS_Store
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+
+# The documentation site is a separately versioned Sites source repository.
+docs-site/
+
+# Historical discovery material is local-only and may contain large,
+# third-party, private, or credential-bearing artifacts.
+resource_เก่า/
