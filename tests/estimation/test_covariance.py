@@ -6,6 +6,7 @@ import pytest
 
 from asset_management_toolkit.estimation import (
     constant_correlation_covariance,
+    ewma_covariance,
     sample_covariance,
     shrink_covariance,
 )
@@ -97,3 +98,54 @@ def test_covariance_estimators_do_not_mutate_input() -> None:
 def test_shrink_covariance_rejects_invalid_intensity(intensity: float) -> None:
     with pytest.raises(ValueError, match="intensity"):
         shrink_covariance(_returns(), intensity=intensity)
+
+
+def test_ewma_covariance_matches_hand_calculation() -> None:
+    returns = pd.DataFrame({"a": [-1.0, 0.0, 1.0], "b": [-2.0, 0.0, 2.0]})
+
+    result = ewma_covariance(returns, decay=0.5)
+
+    expected_variance = 26.0 / 49.0
+    expected = pd.DataFrame(
+        [
+            [expected_variance, 2.0 * expected_variance],
+            [2.0 * expected_variance, 4.0 * expected_variance],
+        ],
+        index=["a", "b"],
+        columns=["a", "b"],
+    )
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_ewma_decay_one_matches_population_covariance() -> None:
+    result = ewma_covariance(_returns(), decay=1.0)
+    expected = pd.DataFrame(
+        np.cov(_returns().to_numpy(), rowvar=False, ddof=0),
+        index=_returns().columns,
+        columns=_returns().columns,
+    )
+
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_ewma_covariance_can_annualize_without_mutating_input() -> None:
+    returns = _returns()
+    original = returns.copy(deep=True)
+
+    result = ewma_covariance(
+        returns,
+        decay=0.9,
+        annualization_factor=12,
+    )
+
+    pd.testing.assert_frame_equal(
+        result,
+        12 * ewma_covariance(returns, decay=0.9),
+    )
+    pd.testing.assert_frame_equal(returns, original)
+
+
+@pytest.mark.parametrize("decay", [0.0, -0.1, 1.01, np.nan])
+def test_ewma_covariance_rejects_invalid_decay(decay: float) -> None:
+    with pytest.raises(ValueError, match="decay"):
+        ewma_covariance(_returns(), decay=decay)

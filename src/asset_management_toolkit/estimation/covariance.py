@@ -93,6 +93,49 @@ def shrink_covariance(
     return result
 
 
+def ewma_covariance(
+    returns: pd.DataFrame,
+    *,
+    decay: float = 0.94,
+    demean: bool = True,
+    annualization_factor: float | None = None,
+) -> pd.DataFrame:
+    """Estimate a normalized exponentially weighted population covariance.
+
+    The latest observation receives the greatest weight. No Bessel or
+    effective-sample correction is applied, so ``decay=1`` matches population
+    covariance with ``ddof=0``.
+    """
+    frame = _validated_returns(returns, ddof=0)
+    if len(frame) < 2:
+        raise ValueError("EWMA covariance requires at least two observations")
+    decay_value = _positive_real(decay, "decay")
+    if decay_value > 1.0:
+        raise ValueError("decay must be at most one")
+    if not isinstance(demean, bool):
+        raise TypeError("demean must be a bool")
+
+    powers = np.arange(len(frame) - 1, -1, -1, dtype=float)
+    weights = np.power(decay_value, powers)
+    weights /= weights.sum()
+    values = frame.to_numpy(dtype=float)
+    center = np.average(values, axis=0, weights=weights) if demean else 0.0
+    centered = values - center
+    covariance = (centered * weights[:, None]).T @ centered
+
+    if annualization_factor is not None:
+        covariance *= _positive_real(
+            annualization_factor,
+            "annualization_factor",
+        )
+    return pd.DataFrame(
+        covariance,
+        index=frame.columns.copy(),
+        columns=frame.columns.copy(),
+        dtype=float,
+    )
+
+
 def _validated_returns(returns: pd.DataFrame, ddof: int) -> pd.DataFrame:
     if not isinstance(returns, pd.DataFrame):
         raise TypeError("returns must be a pandas DataFrame")
@@ -127,4 +170,13 @@ def _unit_interval(value: float, name: str) -> float:
     numeric = float(value)
     if not np.isfinite(numeric) or not 0.0 <= numeric <= 1.0:
         raise ValueError(f"{name} must be finite and between zero and one")
+    return numeric
+
+
+def _positive_real(value: float, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float, np.number)):
+        raise TypeError(f"{name} must be a real number")
+    numeric = float(value)
+    if not np.isfinite(numeric) or numeric <= 0.0:
+        raise ValueError(f"{name} must be finite and greater than zero")
     return numeric

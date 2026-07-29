@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -7,6 +8,7 @@ from asset_management_toolkit.portfolio import (
     capitalization_weights,
     capped_equal_weights,
     equal_weights,
+    inverse_volatility_weights,
 )
 
 
@@ -86,3 +88,36 @@ def test_capitalization_weights_rejects_invalid_values(
 def test_weighting_functions_reject_duplicate_labels() -> None:
     with pytest.raises(ValueError, match="unique"):
         equal_weights(["a", "a"])
+
+
+def test_inverse_volatility_weights_preserves_covariance_labels() -> None:
+    covariance = pd.DataFrame(
+        [[0.04, 0.0], [0.0, 0.09]],
+        index=["equity", "bonds"],
+        columns=["equity", "bonds"],
+    )
+
+    result = inverse_volatility_weights(covariance)
+
+    expected = pd.Series(
+        [0.6, 0.4],
+        index=covariance.index,
+        name="weight",
+    )
+    pd.testing.assert_series_equal(result, expected)
+
+
+def test_inverse_volatility_weights_rejects_zero_variance() -> None:
+    with pytest.raises(ValueError, match="strictly positive"):
+        inverse_volatility_weights(np.diag([0.04, 0.0]))
+
+
+def test_inverse_volatility_weights_rejects_misaligned_labels() -> None:
+    covariance = pd.DataFrame(
+        np.diag([0.04, 0.09]),
+        index=["a", "b"],
+        columns=["b", "a"],
+    )
+
+    with pytest.raises(ValueError, match="labels"):
+        inverse_volatility_weights(covariance)

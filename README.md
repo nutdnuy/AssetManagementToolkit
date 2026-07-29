@@ -8,7 +8,7 @@
 
 ![Version](https://img.shields.io/badge/version-0.9.0-6EE7B7?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.9–3.13-68C4FF?style=for-the-badge&logo=python&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-281_passing-6EE7B7?style=for-the-badge)
+![Tests](https://img.shields.io/badge/tests-314_passing-6EE7B7?style=for-the-badge)
 ![Data](https://img.shields.io/badge/tutorials-synthetic_data_only-C4A7FF?style=for-the-badge)
 
 <br>
@@ -50,9 +50,9 @@ simulation, CPPI/GOPI protection, backtesting, diagnostics, and presentation.
 | **Return & risk analytics** | Compounding, annualized return, volatility, semivariance, drawdown, VaR/CVaR, Sharpe, Sortino, Calmar, information ratio, beta, alpha | `analytics` |
 | **Drawdown & style** | Drawdown paths and episodes, static and rolling returns-based style analysis | `analytics` |
 | **Factor analysis** | Static/rolling OLS, regularized factor models, attribution, trailing returns | `analytics` |
-| **Covariance estimation** | Sample, constant-correlation, and shrinkage covariance estimators | `estimation` |
-| **Portfolio construction** | Markowitz, GMV, maximum Sharpe, efficient frontier, Black–Litterman, risk contributions, ERC and target risk budgets | `portfolio` |
-| **Weighting policies** | Equal weight, capped equal weight, capitalization weight | `portfolio` |
+| **Covariance estimation** | Sample, EWMA, constant-correlation, shrinkage, PSD handling, and spectral denoising | `estimation` |
+| **Portfolio construction** | Markowitz, GMV, maximum Sharpe, efficient frontier, Black–Litterman, risk contributions, ERC, HRP, HERC and target risk budgets | `portfolio` |
+| **Weighting policies** | Equal, inverse-volatility, capped equal, and capitalization weight | `portfolio` |
 | **Portfolio insurance** | Fixed-maturity CPPI, open-ended CPPI, TIPP, volatility-controlled CPPI, GOPI, empirical jump gap-risk diagnostics | `allocation` |
 | **Backtesting** | Start-of-period target weights, drift, turnover, proportional costs, NAV | `backtesting` |
 | **Stress testing** | Historical windows, hypothetical shocks, asset contributions, multi-period paths | `stress` |
@@ -141,6 +141,21 @@ maximum_sharpe = maximum_sharpe_ratio(
     covariance,
 )
 contributions = risk_contributions(maximum_sharpe, covariance)
+```
+
+Hierarchical and inverse-volatility baselines are available from the same
+labelled covariance matrix:
+
+```python
+from asset_management_toolkit.portfolio import (
+    herc_weights,
+    hrp_weights,
+    inverse_volatility_weights,
+)
+
+inverse_volatility = inverse_volatility_weights(covariance)
+hrp = hrp_weights(covariance, linkage_method="single")
+herc = herc_weights(covariance, linkage_method="average")
 ```
 
 ### 3. Simulate jumps and inspect terminal wealth
@@ -309,8 +324,8 @@ All notebooks use synthetic data and run without credentials.
 Asset_Management_Tool_Git/
 ├── src/asset_management_toolkit/
 │   ├── analytics/                  # return, risk, style, drawdown, factors
-│   ├── estimation/                 # covariance estimators
-│   ├── portfolio/                  # Markowitz, BL, weighting, risk budgets
+│   ├── estimation/                 # covariance, PSD, spectral estimators
+│   ├── portfolio/                  # Markowitz, BL, HRP/HERC, risk budgets
 │   ├── allocation/                 # CPPI, GOPI, and gap-risk diagnostics
 │   ├── simulation/                 # GBM, jumps, VG, stable, calibration
 │   ├── stress/                     # probability-free stress testing

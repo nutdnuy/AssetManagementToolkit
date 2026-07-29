@@ -8,6 +8,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from asset_management_toolkit.portfolio._validation import MatrixInput, as_covariance
+
 
 def equal_weights(asset_names: Iterable[Any]) -> pd.Series:
     """Return fully invested equal weights for unique asset labels."""
@@ -24,6 +26,31 @@ def equal_weights(asset_names: Iterable[Any]) -> pd.Series:
         name="weight",
         dtype=float,
     )
+
+
+def inverse_volatility_weights(covariance: MatrixInput) -> pd.Series:
+    """Return fully invested inverse-volatility weights."""
+    if isinstance(covariance, pd.DataFrame):
+        if not covariance.index.is_unique or not covariance.columns.is_unique:
+            raise ValueError("covariance labels must be unique")
+        if not covariance.index.equals(covariance.columns):
+            raise ValueError("covariance row and column labels must match exactly")
+    values = np.asarray(covariance, dtype=float)
+    if values.ndim != 2 or values.shape[0] == 0 or values.shape[0] != values.shape[1]:
+        raise ValueError("covariance must be a non-empty square matrix")
+    matrix = as_covariance(covariance, values.shape[0])
+    variances = np.diag(matrix)
+    if np.any(variances <= 0.0):
+        raise ValueError("covariance must have strictly positive variances")
+    inverse_logs = -0.5 * np.log(variances)
+    relative = np.exp(inverse_logs - inverse_logs.max())
+    weights = relative / relative.sum()
+    labels = (
+        covariance.index.copy()
+        if isinstance(covariance, pd.DataFrame)
+        else pd.Index([f"asset_{index}" for index in range(len(weights))])
+    )
+    return pd.Series(weights, index=labels, name="weight", dtype=float)
 
 
 def capitalization_weights(market_capitalizations: pd.Series) -> pd.Series:

@@ -10,6 +10,11 @@ from asset_management_toolkit.portfolio.core import (
     portfolio_return,
     portfolio_volatility,
 )
+from asset_management_toolkit.portfolio.hierarchical import (
+    condensed_correlation_distance,
+    herc_weights,
+    hrp_weights,
+)
 from asset_management_toolkit.portfolio.markowitz_portfolio import (
     efficient_frontier,
     efficient_frontier_weights,
@@ -26,6 +31,7 @@ from asset_management_toolkit.portfolio.weighting import (
     capitalization_weights,
     capped_equal_weights,
     equal_weights,
+    inverse_volatility_weights,
 )
 
 __all__ = [
@@ -39,6 +45,10 @@ __all__ = [
     "implied_equilibrium_returns",
     "capitalization_weights",
     "capped_equal_weights",
+    "condensed_correlation_distance",
+    "herc_weights",
+    "hrp_weights",
+    "inverse_volatility_weights",
     "maximum_sharpe_ratio",
     "minimum_volatility",
     "portfolio_return",
