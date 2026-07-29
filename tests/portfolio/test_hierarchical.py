@@ -28,8 +28,10 @@ def test_condensed_correlation_distance_matches_squareform_order() -> None:
     )
 
     result = condensed_correlation_distance(correlation)
-    expected_square = np.sqrt((1.0 - correlation) / 2.0)
-    np.fill_diagonal(expected_square.values, 0.0)
+    expected_square = np.sqrt(
+        (1.0 - correlation.to_numpy(dtype=float, copy=True)) / 2.0
+    )
+    np.fill_diagonal(expected_square, 0.0)
 
     np.testing.assert_allclose(result, squareform(expected_square))
 
