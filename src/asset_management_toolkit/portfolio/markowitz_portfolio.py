@@ -42,8 +42,9 @@ def minimum_volatility(
         {"type": "eq", "fun": lambda weights: np.sum(weights) - 1.0},
         {
             "type": "eq",
-            "fun": lambda weights: portfolio_return(weights, returns_vector)
-            - target_return,
+            "fun": lambda weights: (
+                portfolio_return(weights, returns_vector) - target_return
+            ),
         },
     )
     result = minimize(
